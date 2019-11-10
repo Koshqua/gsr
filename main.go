@@ -19,7 +19,7 @@ var cmd *exec.Cmd
 func main() {
 	app.Name = "gsr"
 	app.Usage = "Listening to changes on go files and restarting main.go"
-	app.Commands = []*cli.Command{
+	app.Commands = []cli.Command{
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
@@ -34,6 +34,11 @@ func main() {
 
 }
 func addWatcher(file string) {
+	format := CheckFormat(file)
+	if format != "go" {
+		fmt.Println("You can run only .go files")
+		os.Exit(1)
+	}
 
 	//getting current directory
 	pwd, err := os.Getwd()
@@ -46,11 +51,7 @@ func addWatcher(file string) {
 	//Walking every file and adding listener
 	filepath.Walk(pwd, func(path string, fi os.FileInfo, err error) error {
 		//checking if it's a .go file
-		fname := strings.Split(fi.Name(), ".")
-		format := ""
-		if len(fname) > 1 {
-			format = fname[1]
-		}
+		format := CheckFormat(fi.Name())
 		//adding watcher to to .go files in every folder
 		if format == "go" {
 			watcher.Add(path)
@@ -60,6 +61,7 @@ func addWatcher(file string) {
 
 	done := make(chan bool)
 	go Run(file)
+	go ListenExit()
 	go func() {
 		for {
 			select {
@@ -113,4 +115,22 @@ func Stop() {
 	if cmd.Process.Pid != 0 {
 		cmd.Process.Kill()
 	}
+}
+
+func ListenExit() {
+	scanner := bufio.NewScanner(os.Stdout)
+	for scanner.Scan() {
+		if scanner.Text() == "exit" {
+			os.Exit(1)
+		}
+	}
+}
+
+func CheckFormat(file string) string {
+	fname := strings.Split(file, ".")
+	format := ""
+	if len(fname) > 1 {
+		format = fname[1]
+	}
+	return format
 }
