@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/fsnotify/fsnotify"
 	"github.com/urfave/cli"
 )
@@ -19,7 +20,7 @@ var cmd *exec.Cmd
 func main() {
 	app.Name = "gsr"
 	app.Usage = "Listening to changes on go files and restarting main.go"
-	app.Commands = []*cli.Command{
+	app.Commands = []cli.Command{
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
@@ -45,7 +46,6 @@ func addWatcher(file string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(pwd)
 	watcher, _ := fsnotify.NewWatcher()
 	defer watcher.Close()
 	//Walking every file and adding listener
@@ -88,6 +88,12 @@ func Run(file string) {
 		os.Exit(1)
 
 	}
+	outScanner := bufio.NewScanner(out)
+	go func() {
+		for outScanner.Scan() {
+			color.Green("%v", outScanner.Text())
+		}
+	}()
 	errors, err := cmd.StderrPipe()
 	if err != nil {
 		fmt.Println(err)
@@ -96,7 +102,7 @@ func Run(file string) {
 	errScanner := bufio.NewScanner(errors)
 	go func() {
 		for errScanner.Scan() {
-			fmt.Println(errScanner.Text())
+			color.Red("%v", errScanner.Text())
 		}
 	}()
 	err = cmd.Start()
@@ -104,13 +110,9 @@ func Run(file string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	outScanner := bufio.NewScanner(out)
-	go func() {
-		for outScanner.Scan() {
-			fmt.Println(outScanner.Text())
-		}
-	}()
+
 }
+
 func Stop() {
 	if cmd.Process.Pid != 0 {
 		cmd.Process.Kill()
@@ -121,6 +123,7 @@ func ListenExit() {
 	scanner := bufio.NewScanner(os.Stdout)
 	for scanner.Scan() {
 		if scanner.Text() == "exit" {
+			cmd.Process.Kill()
 			os.Exit(1)
 		}
 	}
