@@ -20,7 +20,7 @@ var cmd *exec.Cmd
 func main() {
 	app.Name = "gsr"
 	app.Usage = "Listening to changes on go files and restarting main.go"
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
