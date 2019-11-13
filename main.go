@@ -59,6 +59,7 @@ func addWatcher(file string) {
 	})
 
 	done := make(chan bool)
+	go ListenExit()
 	go Run(file)
 
 	go func() {
@@ -122,5 +123,14 @@ func Stop() {
 			log.Fatalln(err)
 		}
 
+	}
+}
+func ListenExit() {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		if scanner.Text() == "^C" {
+			Stop()
+			os.Exit(1)
+		}
 	}
 }
