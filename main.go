@@ -60,7 +60,7 @@ func addWatcher(file string) {
 
 	done := make(chan bool)
 	go Run(file)
-	go ListenExit()
+
 	go func() {
 		for {
 			select {
@@ -117,17 +117,10 @@ func Run(file string) {
 func Stop() {
 	if cmd.Process.Pid != 0 {
 		cmd.Process.Kill()
-	}
-}
-
-//ListenExit ...
-func ListenExit() {
-	scanner := bufio.NewScanner(os.Stdout)
-	for scanner.Scan() {
-		if scanner.Text() == "exit" {
-			Stop()
-
-			os.Exit(1)
+		_, err := cmd.Process.Wait()
+		if err != nil {
+			log.Fatalln(err)
 		}
+
 	}
 }
