@@ -125,7 +125,8 @@ func ListenExit() {
 	scanner := bufio.NewScanner(os.Stdout)
 	for scanner.Scan() {
 		if scanner.Text() == "exit" {
-			cmd.Process.Kill()
+			Stop()
+
 			os.Exit(1)
 		}
 	}
