@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/fsnotify/fsnotify"
@@ -19,7 +20,7 @@ var cmd *exec.Cmd
 func main() {
 	app.Name = "gsr"
 	app.Usage = "Listening to changes on go files and restarting main.go"
-	app.Commands = []*cli.Command{
+	app.Commands = []cli.Command{
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
@@ -83,6 +84,7 @@ func addWatcher(file string) {
 //Run ..
 func Run(file string) {
 	cmd = exec.Command("go", "run", file)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		fmt.Println(err)
@@ -117,18 +119,17 @@ func Run(file string) {
 //Stop ...
 func Stop() {
 	if cmd.Process.Pid != 0 {
-		cmd.Process.Kill()
-		_, err := cmd.Process.Wait()
-		if err != nil {
-			log.Fatalln(err)
+		pgid, err := syscall.Getpgid(cmd.Process.Pid)
+		if err == nil {
+			syscall.Kill(-pgid, 15)
 		}
-
+		cmd.Wait()
 	}
 }
 func ListenExit() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		if scanner.Text() == "^C" {
+		if scanner.Text() == "x" {
 			Stop()
 			os.Exit(1)
 		}
