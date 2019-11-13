@@ -8,8 +8,8 @@ To install `go get github.com/Koshqua/gsr`.
 
 
 
-*To start tracking and run app you should write command `gsr run filename.go`.
-*To exit the process, just write `x` to the terminal. 
+1.To start tracking and run app you should write command `gsr run filename.go`.
+2.To exit the process, just write `x` to the terminal. 
 
 In closest future i'll make the code more beatiful :) 
 
