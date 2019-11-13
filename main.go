@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/fsnotify/fsnotify"
@@ -35,8 +34,8 @@ func main() {
 
 }
 func addWatcher(file string) {
-	format := CheckFormat(file)
-	if format != "go" {
+	format := filepath.Ext(file)
+	if format != ".go" {
 		fmt.Println("You can run only .go files")
 		os.Exit(1)
 	}
@@ -51,9 +50,9 @@ func addWatcher(file string) {
 	//Walking every file and adding listener
 	filepath.Walk(pwd, func(path string, fi os.FileInfo, err error) error {
 		//checking if it's a .go file
-		format := CheckFormat(fi.Name())
+		format := filepath.Ext(fi.Name())
 		//adding watcher to to .go files in every folder
-		if format == "go" {
+		if format == ".go" {
 			watcher.Add(path)
 		}
 		return nil
@@ -80,6 +79,7 @@ func addWatcher(file string) {
 	<-done
 }
 
+//Run ..
 func Run(file string) {
 	cmd = exec.Command("go", "run", file)
 	out, err := cmd.StdoutPipe()
@@ -113,12 +113,14 @@ func Run(file string) {
 
 }
 
+//Stop ...
 func Stop() {
 	if cmd.Process.Pid != 0 {
 		cmd.Process.Kill()
 	}
 }
 
+//ListenExit ...
 func ListenExit() {
 	scanner := bufio.NewScanner(os.Stdout)
 	for scanner.Scan() {
@@ -127,13 +129,4 @@ func ListenExit() {
 			os.Exit(1)
 		}
 	}
-}
-
-func CheckFormat(file string) string {
-	fname := strings.Split(file, ".")
-	format := ""
-	if len(fname) > 1 {
-		format = fname[1]
-	}
-	return format
 }
